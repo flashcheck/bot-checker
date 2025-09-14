@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🤖 Telegram Bot Checker - Fix "Unauthorized" Error</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px; 
+            background: #1a1a1a; 
+            color: #fff; 
+            line-height: 1.6;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .result { 
+            margin: 15px 0; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border-left: 4px solid;
+        }
+        .success { background: #0d4a2d; border-color: #16a34a; }
+        .error { background: #4a1a1a; border-color: #dc2626; }
+        .warning { background: #4a3b1a; border-color: #f59e0b; }
+        .info { background: #1a2e4a; border-color: #3b82f6; }
+        button { 
+            padding: 12px 24px; 
+            margin: 8px; 
+            cursor: pointer; 
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        pre { 
+            background: #2a2a2a; 
+            padding: 15px; 
+            border-radius: 6px; 
+            font-size: 12px; 
+            overflow-x: auto;
+            border: 1px solid #444;
+        }
+        .step { 
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .step h4 { margin-top: 0; color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Telegram Bot Checker</h1>
+        <p><strong>Fix "Bot API Error: Unauthorized"</strong></p>
+
+        <div class="step">
+            <h4>Your Bot Configuration:</h4>
+            <p><strong>Bot Token:</strong> <code>8009988283:AAHjxI8aY38ksTnrNoRaAunUEGixcVjuaDA</code></p>
+            <p><strong>Chat ID:</strong> <code>7281528879</code></p>
+        </div>
+
+        <button class="btn-primary" onclick="step1_checkBot()">Step 1: Check Bot Status</button>
+        <button class="btn-warning" onclick="step2_getUpdates()">Step 2: Check Bot Updates</button>
+        <button class="btn-success" onclick="step3_testMessage()">Step 3: Test Message</button>
+        <button class="btn-primary" onclick="step4_getChatInfo()">Step 4: Verify Chat</button>
+
+        <div id="results"></div>
+
+        <div class="step">
+            <h4>🔧 How to Fix "Unauthorized" Error:</h4>
+            <ol>
+                <li><strong>Start the Bot:</strong> Send <code>/start</code> to your bot on Telegram</li>
+                <li><strong>Check Token:</strong> Make sure bot token is correct and active</li>
+                <li><strong>Verify Chat ID:</strong> Use @userinfobot to get your correct chat ID</li>
+                <li><strong>Bot Permissions:</strong> Ensure bot can send messages</li>
+                <li><strong>Bot Active:</strong> Make sure bot hasn't been deleted or suspended</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const BOT_TOKEN = "7469005317:AAGgWxVoQLTDTcclOPYiysSqf58xyihZwwQ";
+        const CHAT_ID = "7281528879";
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            document.getElementById('results').appendChild(div);
+            console.log(message.replace(/<[^>]*>/g, ''));
+        }
+
+        async function step1_checkBot() {
+            addResult("🔍 Step 1: Checking bot status...", 'info');
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/getMe`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.ok) {
+                    addResult(`✅ Bot is ACTIVE and working!<br>
+                        <strong>Bot Name:</strong> ${data.result.first_name}<br>
+                        <strong>Username:</strong> @${data.result.username}<br>
+                        <strong>Bot ID:</strong> ${data.result.id}`, 'success');
+                    addResult(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
+                } else {
+                    addResult(`❌ Bot Error: ${data.description}<br>
+                        <strong>Error Code:</strong> ${data.error_code}<br>
+                        <strong>Solution:</strong> Check if bot token is correct`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Network Error: ${error.message}<br>
+                    <strong>This could mean:</strong> Internet connection issue or API blocked`, 'error');
+            }
+        }
+
+        async function step2_getUpdates() {
+            addResult("📱 Step 2: Checking recent bot updates...", 'info');
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.ok) {
+                    if (data.result.length > 0) {
+                        addResult(`✅ Found ${data.result.length} recent updates!`, 'success');
+                        const lastUpdate = data.result[data.result.length - 1];
+                        if (lastUpdate.message) {
+                            addResult(`<strong>Last message from:</strong> ${lastUpdate.message.from.first_name} (ID: ${lastUpdate.message.from.id})<br>
+                                <strong>Chat ID:</strong> ${lastUpdate.message.chat.id}<br>
+                                <strong>Message:</strong> "${lastUpdate.message.text}"`, 'info');
+                        }
+                    } else {
+                        addResult(`⚠️ No recent updates found.<br>
+                            <strong>This means:</strong> No one has messaged your bot recently.<br>
+                            <strong>Action needed:</strong> Send /start to your bot first!`, 'warning');
+                    }
+                    addResult(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
+                } else {
+                    addResult(`❌ Error getting updates: ${data.description}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function step3_testMessage() {
+            addResult("💬 Step 3: Testing message send...", 'info');
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+            const testMessage = `🧪 Test from Bot Checker\n\nTime: ${new Date().toISOString()}\nIf you see this, your bot is working!`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: testMessage
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    addResult(`✅ Message sent successfully!<br>
+                        <strong>Message ID:</strong> ${data.result.message_id}<br>
+                        <strong>Status:</strong> Your bot is working perfectly!`, 'success');
+                } else {
+                    addResult(`❌ Failed to send message!<br>
+                        <strong>Error:</strong> ${data.description}<br>
+                        <strong>Error Code:</strong> ${data.error_code}<br>
+                        <strong>Common causes:</strong><br>
+                        • Chat not found (${data.error_code === 400 ? '✓' : ''})<br>
+                        • Bot blocked (${data.error_code === 403 ? '✓' : ''})<br>
+                        • Unauthorized (${data.error_code === 401 ? '✓' : ''})`, 'error');
+                }
+                addResult(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
+            } catch (error) {
+                addResult(`❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        async function step4_getChatInfo() {
+            addResult("👤 Step 4: Getting chat information...", 'info');
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/getChat`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: CHAT_ID })
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    addResult(`✅ Chat information retrieved!<br>
+                        <strong>Chat Type:</strong> ${data.result.type}<br>
+                        <strong>Chat ID:</strong> ${data.result.id}<br>
+                        ${data.result.first_name ? `<strong>Name:</strong> ${data.result.first_name}` : ''}<br>
+                        ${data.result.username ? `<strong>Username:</strong> @${data.result.username}` : ''}`, 'success');
+                } else {
+                    addResult(`❌ Cannot get chat info!<br>
+                        <strong>Error:</strong> ${data.description}<br>
+                        <strong>This usually means:</strong> User hasn't started the bot yet!<br>
+                        <strong>Solution:</strong> Send /start to your bot first`, 'error');
+                }
+                addResult(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
+            } catch (error) {
+                addResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run Step 1 on load
+        setTimeout(() => {
+            step1_checkBot();
+        }, 1000);
+    </script>
+</body>
+</html>
